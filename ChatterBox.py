@@ -1,3 +1,8 @@
+#TODO: Add names instead of IPs (would need preprocessing step before adding them to chat room)
+#TODO: Add encryption to the messages! maybe start out with a simple XOR or something, and then go to like AES/ actual algorithms
+#TODO: Fix exiting from the sever so that error messages do not appear
+
+
 import socket
 import threading
 
@@ -18,7 +23,6 @@ def server_receive_message(addr, data):
     messages.append(msg)
     return msg
 
-
 def server_send_message(data):
     for conn in connections:
         conn[0].sendall(bytes(data,ENCODING))
@@ -38,7 +42,7 @@ def handle_client(conn, addr):
     connected = True
     print(f'Connected by {addr[0]} on port {addr[1]}')
     conn.send(CHATROOM_NAME)
-    server_send_message(f"SERVER: {addr[0]} has joined the chat room!")
+    server_send_message(f"SERVER:{addr[0]} has joined the chat room!")
     while connected:
         conn_msg = conn.recv(1024)
         if str(conn_msg, encoding=ENCODING) == EXIT_MSG:
