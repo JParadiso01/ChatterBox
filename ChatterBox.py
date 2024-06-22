@@ -9,12 +9,14 @@ import threading
 EXIT_MSG = 'exit'
 CHATROOM_NAME = b'Test'
 ENCODING = 'utf-8'
+#messages = [{addr}: {data}]
 messages = []
-connections = []
+#client_info = {(connection_socket,(addr, port)): name}  
+client_info = { }
 
 def print_message(msg):
    split_msg = msg.split(':')
-   f_msg = f'\033[38;5;47m{split_msg[1]}\033[38;5;15m: {split_msg[2]}'
+   f_msg = f'\033[38;5;47m{split_msg[1]}\033[38;5;15m:{split_msg[2]}'
    print(f_msg)
     
 def server_receive_message(addr, data):
@@ -24,7 +26,7 @@ def server_receive_message(addr, data):
     return msg
 
 def server_send_message(data):
-    for conn in connections:
+    for conn in client_info:
         conn[0].sendall(bytes(data,ENCODING))
 
 def server(host='127.0.0.1', port=65432):
@@ -34,21 +36,31 @@ def server(host='127.0.0.1', port=65432):
         print(f'Server listening on {host}:{port}')
         while True:
             conn, addr = s.accept()
-            connections.append((conn, addr))
             thread = threading.Thread(target=handle_client, args=(conn, addr))
             thread.start()
 
 def handle_client(conn, addr):
+    global client_info
+
+    #get client info
     connected = True
-    print(f'Connected by {addr[0]} on port {addr[1]}')
+    print(f'[INFO]: {addr[0]} has connected on port {addr[1]}')
     conn.send(CHATROOM_NAME)
-    server_send_message(f"SERVER:{addr[0]} has joined the chat room!")
+    conn.sendall(b"SERVER:Please enter a username")
+    username = conn.recv(1024)
+    username = str(username, encoding=ENCODING)
+    client_info[(conn, addr)] = username
+    server_send_message(f"SERVER:{username} has joined the chat room!")
+
+    #generic client loop
     while connected:
         conn_msg = conn.recv(1024)
         if str(conn_msg, encoding=ENCODING) == EXIT_MSG:
             connected = False
-            connections.remove((conn, addr))
-        formatted_msg = server_receive_message(addr[0], conn_msg)
+            client_info.pop((conn, addr))
+            print(f'[INFO]: {addr} has exitted the chat room')
+            break
+        formatted_msg = server_receive_message(client_info[(conn, addr)], conn_msg)
         server_send_message(formatted_msg)
     conn.close()
 
