@@ -46,11 +46,12 @@ def handle_client(conn, addr):
     connected = True
     print(f'[INFO]: {addr[0]} has connected on port {addr[1]}')
     conn.send(CHATROOM_NAME)
-    conn.sendall(b"SERVER:Please enter a username")
+    conn.sendall(b"SERVER: Please enter a username")
     username = conn.recv(1024)
     username = str(username, encoding=ENCODING)
     client_info[(conn, addr)] = username
-    server_send_message(f"SERVER:{username} has joined the chat room!")
+    print(f"SERVER: {username} has joined the chat room!")
+    server_send_message(f"SERVER: {username} has joined the chat room!")
 
     #generic client loop
     while connected:
@@ -59,6 +60,8 @@ def handle_client(conn, addr):
             connected = False
             client_info.pop((conn, addr))
             print(f'[INFO]: {addr} has exitted the chat room')
+            print(f'SERVER: {username} has left the chat room')
+            server_send_message(f'SERVER: {username} has left the chat room')
             break
         formatted_msg = server_receive_message(client_info[(conn, addr)], conn_msg)
         server_send_message(formatted_msg)
